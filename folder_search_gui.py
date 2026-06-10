@@ -22,10 +22,9 @@ class FolderSearchApp:
         self.root.minsize(800, 500)
         self.root.configure(bg="#f0f2f5")
         self.setup_ui()
-        self.search_results = []  # 存储结果: [ (filepath, sheet_name, row, col, cell_value), ... ]
+        self.search_results = []
 
     def setup_ui(self):
-        # 样式
         style = ttk.Style()
         style.theme_use("clam")
         style.configure("TButton", padding=6, relief="flat", background="#4a90d9", foreground="white")
@@ -33,11 +32,9 @@ class FolderSearchApp:
         style.configure("TLabel", background="#f0f2f5")
         style.configure("Treeview", rowheight=25)
 
-        # 顶部框架
         top_frame = tk.Frame(self.root, bg="#f0f2f5", padx=15, pady=10)
         top_frame.pack(fill="x")
 
-        # 选择文件夹
         tk.Label(top_frame, text="选择文件夹:", bg="#f0f2f5", font=("微软雅黑", 10)).grid(row=0, column=0, sticky="w")
         self.folder_var = tk.StringVar()
         self.folder_entry = tk.Entry(top_frame, textvariable=self.folder_var, width=50, font=("微软雅黑", 9))
@@ -45,38 +42,30 @@ class FolderSearchApp:
         self.browse_btn = ttk.Button(top_frame, text="浏览...", command=self.browse_folder)
         self.browse_btn.grid(row=0, column=2, padx=5)
 
-        # 关键词输入
         tk.Label(top_frame, text="关键词:", bg="#f0f2f5", font=("微软雅黑", 10)).grid(row=1, column=0, sticky="w", pady=10)
         self.keyword_var = tk.StringVar()
         self.keyword_entry = tk.Entry(top_frame, textvariable=self.keyword_var, width=40, font=("微软雅黑", 9))
         self.keyword_entry.grid(row=1, column=1, padx=5, sticky="w")
         self.keyword_entry.bind("<Return>", lambda e: self.start_search())
 
-        # 查询模式
         self.search_mode = tk.StringVar(value="fuzzy")
         tk.Radiobutton(top_frame, text="模糊查询", variable=self.search_mode, value="fuzzy", bg="#f0f2f5").grid(row=1, column=2, padx=2, sticky="w")
         tk.Radiobutton(top_frame, text="精确查询", variable=self.search_mode, value="exact", bg="#f0f2f5").grid(row=1, column=3, padx=2, sticky="w")
 
-        # 搜索按钮
         self.search_btn = ttk.Button(top_frame, text="🔍 搜索", command=self.start_search)
         self.search_btn.grid(row=1, column=4, padx=15)
 
-        # 进度条
         self.progress = ttk.Progressbar(top_frame, mode="indeterminate", length=150)
         self.progress.grid(row=2, column=0, columnspan=5, pady=5, sticky="ew")
 
-        # 结果统计
         self.status_label = tk.Label(self.root, text="就绪", bg="#f0f2f5", font=("微软雅黑", 9), anchor="w", padx=15)
         self.status_label.pack(fill="x")
 
-        # 结果展示框架
         result_frame = tk.Frame(self.root, bg="white", relief="solid", bd=1)
         result_frame.pack(fill="both", expand=True, padx=15, pady=(0,10))
 
-        # Treeview + 滚动条
         columns = ("#", "文件路径", "工作表", "行号", "列名", "单元格内容")
         self.tree = ttk.Treeview(result_frame, columns=columns, show="headings", height=15, selectmode="browse")
-        self.tree.heading("#0", text="")
         self.tree.heading("#", text="序号")
         self.tree.heading("文件路径", text="文件路径")
         self.tree.heading("工作表", text="工作表/CSV")
@@ -90,7 +79,6 @@ class FolderSearchApp:
         self.tree.column("列名", width=80)
         self.tree.column("单元格内容", width=400)
         self.tree.bind("<Double-1>", self.on_item_double_click)
-        # 右键菜单
         self.tree.bind("<Button-3>", self.show_context_menu)
 
         vsb = ttk.Scrollbar(result_frame, orient="vertical", command=self.tree.yview)
@@ -98,12 +86,10 @@ class FolderSearchApp:
         self.tree.pack(side="left", fill="both", expand=True)
         vsb.pack(side="right", fill="y")
 
-        # 上下文菜单
         self.context_menu = tk.Menu(self.root, tearoff=0)
         self.context_menu.add_command(label="打开文件", command=self.open_selected_file)
         self.context_menu.add_command(label="打开所在文件夹", command=self.open_containing_folder)
 
-        # 底部按钮
         btn_frame = tk.Frame(self.root, bg="#f0f2f5")
         btn_frame.pack(fill="x", padx=15, pady=5)
         ttk.Button(btn_frame, text="清除结果", command=self.clear_results).pack(side="left", padx=5)
@@ -126,18 +112,13 @@ class FolderSearchApp:
         if not os.path.isdir(folder):
             messagebox.showerror("错误", "文件夹路径无效")
             return
-
-        # 清空旧结果
         self.clear_results()
         self.status_label.config(text="正在搜索中，请稍候...")
         self.progress.start()
         self.search_btn.config(state="disabled")
-
-        # 启动后台线程
         threading.Thread(target=self.search_files, args=(folder, keyword), daemon=True).start()
 
     def search_files(self, folder, keyword):
-        """递归搜索所有表格文件"""
         self.search_results = []
         supported_ext = (".xlsx", ".xls", ".csv")
         try:
@@ -149,7 +130,6 @@ class FolderSearchApp:
                         try:
                             self.process_file(filepath, keyword)
                         except Exception as e:
-                            # 记录错误，跳过坏文件
                             print(f"处理文件出错: {filepath}, 错误: {e}")
         except Exception as e:
             self.root.after(0, lambda: messagebox.showerror("搜索异常", str(e)))
@@ -157,7 +137,6 @@ class FolderSearchApp:
             self.root.after(0, self.search_finished)
 
     def process_file(self, filepath, keyword):
-        """处理单个文件，提取匹配项"""
         ext = os.path.splitext(filepath)[1].lower()
         try:
             if ext == ".csv":
@@ -168,7 +147,6 @@ class FolderSearchApp:
             raise e
 
     def process_csv(self, filepath, keyword):
-        """处理CSV文件"""
         with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
             reader = csv.reader(f)
             for row_idx, row in enumerate(reader, start=1):
@@ -183,8 +161,6 @@ class FolderSearchApp:
                         ))
 
     def process_excel(self, filepath, keyword):
-        """处理Excel文件 (xlsx/xls)"""
-        # 使用 pandas 读取所有工作表
         xls = pd.ExcelFile(filepath)
         for sheet_name in xls.sheet_names:
             df = xls.parse(sheet_name, dtype=str).fillna("")
@@ -195,21 +171,18 @@ class FolderSearchApp:
                         self.search_results.append((
                             filepath,
                             sheet_name,
-                            row_idx + 2,  # pandas行索引从0，Excel首行为标题，行号从2开始（表头算第1行）
+                            row_idx + 2,
                             col_name if col_name else f"列{col_idx}",
                             cell_value
                         ))
 
     def cell_match(self, cell_value, keyword):
-        """判断单元格是否匹配查询模式"""
         if self.search_mode.get() == "exact":
             return cell_value == keyword
         else:
-            # 模糊：包含关键字（大小写不敏感）
             return keyword.lower() in cell_value.lower()
 
     def search_finished(self):
-        """搜索完成，更新界面"""
         self.progress.stop()
         self.search_btn.config(state="normal")
         total = len(self.search_results)
@@ -218,70 +191,26 @@ class FolderSearchApp:
             messagebox.showinfo("结果", "未找到任何匹配的单元格")
         else:
             self.status_label.config(text=f"找到 {total} 个匹配项")
-            # 插入到树形列表
             for idx, result in enumerate(self.search_results, start=1):
                 filepath, sheet, row, col, value = result
-                # 截断过长的值显示
                 display_value = value if len(value) <= 100 else value[:100] + "..."
                 self.tree.insert("", "end", values=(idx, filepath, sheet, row, col, display_value))
             messagebox.showinfo("完成", f"搜索完成，共找到 {total} 个匹配项")
 
     def on_item_double_click(self, event):
-        """双击打开文件（系统默认程序）"""
         self.open_selected_file()
 
     def show_context_menu(self, event):
-        """右键菜单"""
         selected = self.tree.selection()
         if selected:
             self.context_menu.post(event.x_root, event.y_root)
 
     def open_selected_file(self):
-        """打开选中的文件"""
         selected = self.tree.selection()
         if not selected:
             messagebox.showinfo("提示", "请先选择一条结果")
             return
         item = self.tree.item(selected[0])
-        filepath = item['values'][1]
-        try:
-            os.startfile(filepath)  # Windows
-        except Exception as e:
-            messagebox.
-    
-      
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      
-      
-    showerror("错误", f"无法打开文件: {e}")
-
-    def open_containing_folder(self):
-        """打开文件所在文件夹"""
-        selected = self.
-    
-      
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      
-      
-    tree.selection()
-        if not selected:
-            return
-        item = self.
-    
-      
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      
-      
-    tree.item(selected[0])
         filepath = item
     
       
@@ -292,122 +221,49 @@ class FolderSearchApp:
       
       
     ['values'][1]
-        folder = os.
-    
-      
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      
-      
-    path.dirname(filepath)
         try:
-            os.startfile(folder)
+            os.startfile(filepath)
+        except Exception as e:
+            messagebox.showerror("错误", f"无法打开文件: {e}")
+
+    def open_containing_folder(self):
+        selected = self.tree.selection()
+        if not selected:
+            return
+        item = self.tree.item(selected[0])
+        filepath = item['values'][1]
+        try:
+            os.startfile(os.path.dirname(filepath))
         except:
             pass
 
     def clear_results(self):
-        """清空树形列表和结果"""
         for item in self.tree.get_children():
             self.tree.delete(item)
         self.search_results.clear()
         self.status_label.config(text="就绪")
 
     def export_results(self):
-        """导出结果为CSV"""
         if not self.search_results:
-            messagebox.
-    
-      
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      
-      
-    showinfo("提示", "没有结果可导出")
+            messagebox.showinfo("提示", "没有结果可导出")
             return
-        file_path = filedialog.
-    
-      
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      
-      
-    asksaveasfilename(
-            defaultextension=
-    
-      
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      
-      
-    ".csv",
-            filetypes=
-    
-      
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      
-      
-    [("CSV文件", "*.csv")],
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".csv",
+            filetypes=[("CSV文件", "*.csv")],
             title="导出结果"
         )
         if file_path:
             try:
                 with open(file_path, 'w', newline='', encoding='utf-8-sig') as f:
-                    writer = csv.
-    
-      
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      
-      
-    writer(f)
+                    writer = csv.writer(f)
                     writer.writerow(["序号", "文件路径", "工作表", "行号", "列名", "单元格内容"])
                     for idx, res in enumerate(self.search_results, 1):
                         writer.writerow([idx, res[0], res[1], res[2], res[3], res[4]])
-                messagebox.
-    
-      
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      
-      
-    showinfo("成功", f"已导出到 {file_path}")
+                messagebox.showinfo("成功", f"已导出到 {file_path}")
             except Exception as e:
-                messagebox.
-    
-      
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      
-      
-    showerror("导出失败", str(e))
+                messagebox.showerror("导出失败", str(e))
 
 if __name__ == "__main__":
     root = tk.Tk()
     app = FolderSearchApp(root)
-    root.mainloop
-    
-      
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      
-      
-    ()
+    root.mainloop()
