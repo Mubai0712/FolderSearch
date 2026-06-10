@@ -1,0 +1,26 @@
+name: Build exe
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          pip install pandas openpyxl pyinstaller
+      - name: Build exe
+        run: pyinstaller -F -w folder_search_gui.py
+      - name: Upload exe
+        uses: actions/upload-artifact@v4
+        with:
+          name: FolderSearch
+          path: dist/folder_search_gui.exe
