@@ -94,16 +94,7 @@ class FolderSearchApp:
 
     def start_search(self):
         folder = self.folder_var.get().strip()
-        keyword = self.
-    
-      
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      
-      
-    keyword_var.get().strip()
+        keyword = self.keyword_var.get().strip()
         if not folder:
             messagebox.showwarning("提示", "请先选择文件夹")
             return
@@ -225,50 +216,14 @@ class FolderSearchApp:
         try:
             os.startfile(filepath)
         except Exception as e:
-            messagebox.
-    
-      
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      
-      
-    showerror("错误", f"无法打开文件: {e}")
+            messagebox.showerror("错误", f"无法打开文件: {e}")
 
     def open_containing_folder(self):
-        selected = self.
-    
-      
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      
-      
-    tree.selection()
+        selected = self.tree.selection()
         if not selected:
             return
-        item = self.
-    
-      
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      
-      
-    tree.item(selected[0])
-        filepath = item
-    
-      
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      
-      
-    ['values'][1]
+        item = self.tree.item(selected[0])
+        filepath = item['values'][1]
         try:
             os.startfile(os.path.dirname(filepath))
         except:
@@ -282,97 +237,25 @@ class FolderSearchApp:
 
     def export_results(self):
         if not self.search_results:
-            messagebox.
-    
-      
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      
-      
-    showinfo("提示", "没有结果可导出")
+            messagebox.showinfo("提示", "没有结果可导出")
             return
-        file_path = filedialog.
-    
-      
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      
-      
-    asksaveasfilename(
-            defaultextension=
-    
-      
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      
-      
-    ".csv",
-            filetypes=
-    
-      
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      
-      
-    [("CSV文件", "*.csv")],
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".csv",
+            filetypes=[("CSV文件", "*.csv")],
             title="导出结果"
         )
         if file_path:
             try:
                 with open(file_path, 'w', newline='', encoding='utf-8-sig') as f:
-                    writer = csv.
-    
-      
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      
-      
-    writer(f)
+                    writer = csv.writer(f)
                     writer.writerow(["序号", "文件路径", "工作表", "行号", "列名", "单元格内容"])
                     for idx, res in enumerate(self.search_results, 1):
                         writer.writerow([idx, res[0], res[1], res[2], res[3], res[4]])
-                messagebox.
-    
-      
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      
-      
-    showinfo("成功", f"已导出到 {file_path}")
+                messagebox.showinfo("成功", f"已导出到 {file_path}")
             except Exception as e:
-                messagebox.
-    
-      
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      
-      
-    showerror("导出失败", str(e))
+                messagebox.showerror("导出失败", str(e))
 
 if __name__ == "__main__":
     root = tk.Tk()
     app = FolderSearchApp(root)
-    root.mainloop
-    
-      
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      
-      
-    ()
+    root.mainloop()
